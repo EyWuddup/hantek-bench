@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hantek Bench — BMI Hersom</title>
+  <link rel="stylesheet" href="/static/app.css" />
+  <script src="https://cdn.jsdelivr.net/npm/uplot@1.6.31/dist/uPlot.iife.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uplot@1.6.31/dist/uPlot.min.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="mark">HTK</span>
+      <div>
+        <h1>Hantek Bench</h1>
+        <p class="sub">6022BL live scope + LA · OpenHantek / PulseView replacement</p>
+      </div>
+    </div>
+    <div class="mode">
+      <span class="label">Mode</span>
+      <div class="toggle" id="modeToggle" title="Physical H/P on the unit">
+        <button type="button" id="btnScope" class="active">Scope</button>
+        <button type="button" id="btnLa" disabled>LA</button>
+      </div>
+      <span id="modeHint" class="hint">…</span>
+    </div>
+    <div class="status" id="runStatus" title="Active mode status">…</div>
+  </header>
+
+  <main class="grid">
+    <section class="panel plot-panel" id="panelScopePlot">
+      <div class="panel-head">
+        <h2 id="plotTitle">Scope</h2>
+        <div class="row scope-controls" id="scopeControls">
+          <button type="button" id="btnLive" class="primary">Start live</button>
+          <button type="button" id="btnAutoSet" title="Analyze probes and set range / rate / trigger">Auto-set</button>
+          <label>Auto from
+            <select id="autoSetCh" title="Which channel(s) autoset uses for rate / range / trigger">
+              <option value="both" selected>Both</option>
+              <option value="CH1">CH1</option>
+              <option value="CH2">CH2</option>
+            </select>
+          </label>
+          <button type="button" id="btnCapture">Single</button>
+          <label>Rate
+            <select id="rateIndex">
+              <option value="110">100 kS/s</option>
+              <option value="150">500 kS/s</option>
+              <option value="1" selected>1 MS/s</option>
+              <option value="2">2 MS/s</option>
+              <option value="4">4 MS/s</option>
+              <option value="8">8 MS/s</option>
+            </select>
+          </label>
+          <label class="chk"><input type="checkbox" id="ch1On" checked /> CH1</label>
+          <label>Range
+            <select id="ch1Range">
+              <option value="1" selected>±5 V</option>
+              <option value="2">±2.5 V</option>
+              <option value="5">±1 V</option>
+              <option value="10">±500 mV</option>
+            </select>
+          </label>
+          <label>Probe
+            <select id="pf1" title="Must match physical probe switch">
+              <option value="1" selected>×1</option>
+              <option value="10">×10</option>
+            </select>
+          </label>
+          <label class="chk"><input type="checkbox" id="ch2On" checked /> CH2</label>
+          <label>Range
+            <select id="ch2Range">
+              <option value="1">±5 V</option>
+              <option value="2">±2.5 V</option>
+              <option value="5" selected>±1 V</option>
+              <option value="10">±500 mV</option>
+            </select>
+          </label>
+          <label>Probe
+            <select id="pf2" title="Must match physical probe switch">
+              <option value="1">×1</option>
+              <option value="10" selected>×10</option>
+            </select>
+          </label>
+          <label>Steady
+            <select id="trigMode" title="Auto locks on rising edge at mid — steadies the view">
+              <option value="auto" selected>Auto rise (lock)</option>
+              <option value="rising">Rise @ level</option>
+              <option value="falling">Fall @ level</option>
+              <option value="off">Free-run</option>
+            </select>
+          </label>
+          <label>Lvl <input id="trigLvl" type="number" value="0.5" step="0.1" class="num" title="Used for Rise/Fall @ level" /></label>
+          <label class="chk"><input type="checkbox" id="showCursors" checked /> Cursors</label>
+        </div>
+        <div class="row la-controls" id="laControls" hidden>
+          <button type="button" id="btnLaLive" class="primary">Start LA live</button>
+          <button type="button" id="btnLaAutoSet" title="Discover activity → rate / window / trigger">Auto-set</button>
+          <button type="button" id="btnLaSingle">Single</button>
+          <label>Rate
+            <select id="laRate">
+              <option value="500k">500 kHz</option>
+              <option value="1m">1 MHz</option>
+              <option value="2m">2 MHz</option>
+              <option value="6m" selected>6 MHz</option>
+              <option value="12m">12 MHz</option>
+              <option value="24m">24 MHz</option>
+              <option value="48m">48 MHz</option>
+            </select>
+          </label>
+          <label>Samples
+            <select id="laSamples">
+              <option value="40k">40k (~7 ms @6M)</option>
+              <option value="100k">100k</option>
+              <option value="200k">200k</option>
+              <option value="600k" selected>600k (~100 ms @6M)</option>
+              <option value="1m">1M</option>
+              <option value="2m">2M</option>
+            </select>
+          </label>
+          <label>Trig
+            <select id="laTrigMode">
+              <option value="off" selected>Free-run</option>
+              <option value="rising">Rising</option>
+              <option value="falling">Falling</option>
+              <option value="either">Either</option>
+              <option value="high">High</option>
+              <option value="low">Low</option>
+            </select>
+          </label>
+          <label>Src
+            <select id="laTrigCh">
+              <option>D0</option><option>D1</option><option>D2</option><option>D3</option>
+              <option>D4</option><option>D5</option><option>D6</option><option>D7</option>
+            </select>
+          </label>
+        </div>
+        <div class="row la-channels" id="laChanToggles" hidden>
+          <!-- filled by JS: D0..D7 checkboxes -->
+        </div>
+      </div>
+      <div id="plot" class="plot"></div>
+      <div class="scope-readout">
+        <div id="cursorLegend" class="cursor-legend"></div>
+        <div id="meas" class="meas"></div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <section class="panel scope-side" id="panelDualCal">
+        <h2>Dual-probe cal check</h2>
+        <p class="muted">Both tips + GND clips on the <b>same cal pin</b>. Physical ×1 / ×10 must match the UI. Uses <b>live USB</b> (not sigrok dual-CSV).</p>
+        <button type="button" id="btnDualCal" class="primary">Compare CH1 vs CH2 on cal</button>
+        <pre id="dualCalOut" class="mono"></pre>
+      </section>
+
+      <section class="panel scope-side" id="panelCalFreq">
+        <h2>Cal output</h2>
+        <p class="muted">Pauses sampling briefly (required). Uses OpenHantek/Ho-Ro firmware — auto-flashes if still on sigrok.</p>
+        <div class="row wrap">
+          <select id="calFreq"></select>
+          <button type="button" id="btnCalFreq">Set freq</button>
+        </div>
+        <div id="calFreqOut" class="mono"></div>
+      </section>
+
+      <section class="panel scope-side" id="panelProbeProfiles">
+        <h2>Probe profiles</h2>
+        <div class="row wrap">
+          <input id="probeName" placeholder="Name" value="PP80B-CH2" />
+          <input id="probeModel" placeholder="Model" value="PP80B 80MHz" />
+          <label>×
+            <select id="probeAtt">
+              <option value="1">×1</option>
+              <option value="10" selected>×10</option>
+            </select>
+          </label>
+          <label>Ch <select id="probeCh"><option>CH1</option><option selected>CH2</option></select></label>
+        </div>
+        <button type="button" id="btnProbeCal">Auto-cal profile (1 kHz)</button>
+        <div id="probeList" class="list"></div>
+        <pre id="probeCalOut" class="mono"></pre>
+      </section>
+
+      <section class="panel scope-side" id="panelScopeDecode">
+        <h2>Bus decode (scope)</h2>
+        <p class="muted">Stops live briefly. Differential = CH1−CH2 for 2-wire / one 4-wire pair.</p>
+        <label>Bus <select id="busSelect"></select></label>
+        <label>Wiring
+          <select id="wiring">
+            <option value="differential">Differential CH1−CH2</option>
+            <option value="single">Single-ended</option>
+          </select>
+        </label>
+        <label>Channel (single) <select id="decCh"><option>CH1</option><option>CH2</option></select></label>
+        <label>Baud <input id="baud" type="number" placeholder="auto" class="num wide" /></label>
+        <button type="button" id="btnDecode">Capture + decode</button>
+        <div id="busHint" class="muted"></div>
+        <pre id="decodeOut" class="mono"></pre>
+      </section>
+
+      <section class="panel la-side" id="panelLaDecode" hidden>
+        <h2>LA protocol decode</h2>
+        <p class="muted">3.3 V / 5 V logic only. Map pins to decoder roles. Stops live briefly.</p>
+        <label>Bus / decoder <select id="laProto"></select></label>
+        <label>Channel map <input id="laMap" placeholder="rx=D0 or scl=D0:sda=D1" class="num wide" /></label>
+        <div class="row wrap">
+          <button type="button" id="btnLaDecode" class="primary">Capture + decode</button>
+          <button type="button" id="btnLaMeasure">Measure only</button>
+        </div>
+        <div id="laProtoHint" class="muted"></div>
+        <div id="laChanSummary" class="list compact"></div>
+        <pre id="laOut" class="mono"></pre>
+      </section>
+
+      <section class="panel">
+        <h2>Plant bus catalog</h2>
+        <div id="busCatalog" class="list compact"></div>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="foot">
+    <span>Live USB stream · 127.0.0.1:8787 · never bypass E-stop</span>
+    <button type="button" id="btnDoctor">Doctor</button>
+  </footer>
+  <script src="/static/app.js"></script>
+</body>
+</html>

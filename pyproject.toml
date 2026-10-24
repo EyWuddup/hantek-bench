@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hantek-bench"
+version = "0.5.0"
+description = "Hantek 6022BL live scope + logic analyzer bench (web UI, CLI, MCP)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "EyWuddup" }]
+dependencies = [
+  "mcp>=1.0,<2",
+  "numpy>=1.26",
+  "matplotlib>=3.8",
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "libusb1>=3.1",
+  "pydantic>=2.0",
+  "hantek6022api>=2.10",
+  "websockets>=13.0",
+]
+
+[project.scripts]
+hantek-bench = "hantek_navigator.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["hantek_navigator*"]
+
+[tool.setuptools.package-data]
+hantek_navigator = ["static/*"]

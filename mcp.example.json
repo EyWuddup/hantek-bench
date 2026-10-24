@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "hantek-bench": {
+      "command": "${workspaceFolder}/mcp-launch.cmd",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONUTF8": "1",
+        "PYTHONPATH": "${workspaceFolder}",
+        "HTK_ARTIFACT_DIR": "${env:LOCALAPPDATA}/hantek-bench/captures",
+        "HTK_SIGROK_CLI": "${env:LOCALAPPDATA}/hantek-bench/sigrok-cli/sigrok-cli.exe"
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+mcp>=1.0,<2
+numpy>=1.26
+matplotlib>=3.8
+fastapi>=0.115
+uvicorn[standard]>=0.30
+libusb1>=3.1
+pydantic>=2.0
+hantek6022api>=2.10
+websockets>=13.0
